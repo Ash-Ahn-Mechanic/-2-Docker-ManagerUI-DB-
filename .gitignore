@@ -1,0 +1,21 @@
+# 환경 변수 (비밀번호 포함)
+.env
+
+# DB 데이터
+db_data/
+
+# Docker 이미지 tarball
+*.tar
+*.tar.gz
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+
+# 임시 파일
+new_DB.zip
+new_DB_instruction.md
+
+# display frames
+src/display_frames/

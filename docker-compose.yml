@@ -1,0 +1,16 @@
+services:
+  robot:
+    build:
+      context: ..
+      dockerfile: manager_ui/Dockerfile
+    image: ash20000529/robot-stack:latest
+    restart: unless-stopped
+    network_mode: host
+    env_file: .env
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mongo_data:/var/lib/mongodb
+
+volumes:
+  mysql_data:
+  mongo_data:

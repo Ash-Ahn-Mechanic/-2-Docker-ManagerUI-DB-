@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROBOT ADMIN — CONTROL CENTER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #07101f;
+  --surface:    #0c1829;
+  --surface2:   #112031;
+  --border:     #192d45;
+  --border-hi:  #1e3553;
+
+  --green:      #4f83f4;
+  --green-dim:  #1b306a;
+  --green-glow: rgba(79,131,244,0.22);
+  --green-faint:rgba(79,131,244,0.07);
+
+  --amber:      #f0a030;
+  --amber-dim:  rgba(240,160,48,0.14);
+  --red:        #e84545;
+  --red-dim:    rgba(232,69,69,0.12);
+  --cyan:       #1dd7c8;
+
+  --text:       #7d98b8;
+  --text-hi:    #dce8f5;
+  --text-lo:    #304055;
+  --text-mid:   #527090;
+
+  --glow-sm:    0 0 8px rgba(79,131,244,0.45);
+  --glow-md:    0 0 14px rgba(79,131,244,0.4), 0 0 28px rgba(79,131,244,0.15);
+  --glow-lg:    0 0 24px rgba(79,131,244,0.5), 0 0 48px rgba(79,131,244,0.2);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: radial-gradient(ellipse 90% 50% at 50% 0%, rgba(79,131,244,0.05) 0%, transparent 65%);
+}
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse  { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+@keyframes blink  { 0%,49%{opacity:1;} 50%,100%{opacity:0;} }
+
+/* ── HEADER ──────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 64px;
+  background: rgba(7,16,31,0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 500;
+}
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(79,131,244,0.5) 25%, rgba(29,215,200,0.5) 75%, transparent 100%);
+  pointer-events: none;
+}
+
+.logo {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 5px;
+  color: #e8f2ff;
+  text-transform: uppercase;
+  user-select: none;
+  text-shadow: 0 0 20px rgba(79,131,244,0.7), 0 0 40px rgba(79,131,244,0.3);
+}
+.logo-sep { opacity: 0.6; margin: 0 1px; color: var(--cyan); }
+
+.header-right { display: flex; align-items: center; gap: 24px; }
+.ws-wrap  { display: flex; align-items: center; gap: 8px; }
+.ws-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+.ws-label.connected { color: var(--green); }
+.ws-label.error     { color: var(--red); }
+.ws-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-lo); transition: all 0.4s; flex-shrink: 0; }
+.ws-dot.connected { background: var(--green); box-shadow: var(--glow-sm); animation: pulse 2.5s ease-in-out infinite; }
+.ws-dot.error     { background: var(--red); }
+
+#clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-hi);
+}
+.header-divider { width: 1px; height: 18px; background: var(--border-hi); }
+
+/* ── NAV ─────────────────────────────────────────── */
+nav {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  background: rgba(7,16,31,0.92);
+  backdrop-filter: blur(6px);
+  padding: 0 24px;
+  gap: 0;
+  position: sticky;
+  top: 64px;
+  z-index: 499;
+}
+.tab {
+  padding: 0 20px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  border-bottom: 2px solid transparent;
+  transition: color 0.18s, border-bottom-color 0.18s;
+  user-select: none;
+}
+.tab:hover { color: var(--text-hi); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ── BOOT ────────────────────────────────────────── */
+#boot-overlay {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#boot-overlay.hidden { display: none; }
+.boot-terminal {
+  width: min(560px, 90vw);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 2.1;
+}
+.boot-line { opacity: 0; }
+.boot-line.show { animation: fadeIn 0.12s forwards; }
+.boot-cursor {
+  display: inline-block;
+  width: 8px; height: 14px;
+  background: var(--green);
+  vertical-align: middle;
+  margin-left: 2px;
+  animation: blink 0.85s step-start infinite;
+}
+
+/* ── PAGES ───────────────────────────────────────── */
+.page { display: none; padding: 20px 24px; animation: fadeIn 0.22s; }
+.page.active { display: block; }
+
+/* ── SECTION HEADER ──────────────────────────────── */
+.sec-hdr {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-lo);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sec-hdr-title { color: var(--text-mid); }
+.sec-hdr-count { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--green); }
+
+/* ── STAT CARDS ──────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  padding: 18px 20px 16px;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--border-hi);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: border-top-color 0.3s, background 0.18s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.stat-card:hover { background: var(--surface2); }
+.stat-card.ok   { border-top-color: var(--green); }
+.stat-card.warn { border-top-color: var(--amber); }
+.stat-card.err  { border-top-color: var(--red); }
+.stat-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-lo);
+  margin-bottom: 10px;
+}
+.stat-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-hi);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stat-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-lo);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stat-value.green { color: var(--green); text-shadow: 0 0 16px rgba(79,131,244,0.3); }
+.stat-value.cyan  { color: var(--cyan); }
+.stat-value.amber { color: var(--amber); }
+.stat-value.red   { color: var(--red); }
+.stat-value.muted { color: var(--text-lo); }
+.stat-value.small { font-size: 20px; }
+
+/* ── TIMELINE ────────────────────────────────────── */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 380px);
+  overflow-y: auto;
+}
+.tl-row {
+  display: grid;
+  grid-template-columns: 150px 140px 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 9px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-hi);
+  border-radius: 2px;
+  transition: background 0.14s, border-left-color 0.14s;
+}
+.tl-row:hover { background: var(--surface2); }
+.tl-row.executing    { border-left-color: var(--cyan); }
+.tl-row.failed       { border-left-color: var(--red); }
+.tl-row.done         { border-left-color: var(--green); }
+.tl-time   { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-mid); }
+.tl-state  { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1.5px; }
+.tl-detail { font-size: 13px; color: var(--text-mid); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* ── TOOLBAR ─────────────────────────────────────── */
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  border-radius: 3px;
+  color: var(--text-mid);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.14s;
+  text-transform: uppercase;
+  user-select: none;
+}
+.btn:hover { border-color: var(--green); color: var(--green); background: var(--green-faint); }
+.btn.danger { border-color: rgba(232,69,69,0.35); color: rgba(232,69,69,0.65); }
+.btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+.control-bar { display: flex; gap: 10px; margin: 14px 0; }
+
+.count-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 3px 9px;
+  border: 1px solid var(--border-hi);
+  background: var(--surface);
+  color: var(--text-mid);
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+
+/* ── FILTER BAR ──────────────────────────────────── */
+.filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.search-input {
+  flex: 1; min-width: 160px; max-width: 280px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 3px;
+  color: var(--text-hi);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  caret-color: var(--green);
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+.search-input::placeholder { color: var(--text-lo); }
+.search-input:focus { border-color: var(--green); box-shadow: 0 0 0 2px rgba(79,131,244,0.12); }
+
+.pill-group { display: flex; gap: 3px; flex-wrap: wrap; }
+.pill {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  border-radius: 2px;
+  color: var(--text-lo);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-transform: uppercase;
+}
+.pill:hover { border-color: var(--text-mid); color: var(--text); }
+.pill.active { background: var(--green-faint); border-color: var(--green); color: var(--green); }
+.pill.warn-pill.active  { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+.pill.error-pill.active { background: var(--red-dim);   border-color: var(--red);   color: var(--red); }
+.pill.fatal-pill.active { background: rgba(232,69,69,0.18); border-color: var(--red); color: #ffd0d0; }
+
+.filter-match-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-lo);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ── TABLE ───────────────────────────────────────── */
+.table-wrap { border: 1px solid var(--border); overflow-x: auto; border-radius: 4px; }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--surface2); border-bottom: 1px solid var(--border-hi); }
+th {
+  padding: 10px 16px;
+  text-align: left;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-lo);
+  white-space: nowrap;
+}
+td {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+tbody tr { transition: background 0.1s; cursor: pointer; }
+tbody tr:hover td { background: var(--surface2); color: var(--text-hi); }
+tr:last-child td { border-bottom: none; }
+
+/* ── EXPAND ROW ──────────────────────────────────── */
+.expand-row td {
+  padding: 0;
+  cursor: default;
+  background: #050d1a;
+  border-bottom: 1px solid var(--border-hi);
+  white-space: normal;
+  max-width: none;
+}
+.expand-inner {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.expand-section { display: flex; flex-direction: column; gap: 8px; }
+.expand-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--text-lo);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.expand-log-list { display: flex; flex-direction: column; gap: 2px; max-height: 200px; overflow-y: auto; }
+.expand-log-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-mid);
+  padding: 4px 10px;
+  border-left: 2px solid var(--border);
+  background: var(--surface);
+}
+.expand-log-item.type-action_start  { border-left-color: var(--cyan); }
+.expand-log-item.type-action_done   { border-left-color: var(--green); }
+.expand-log-item.type-action_failed { border-left-color: var(--red); }
+.expand-log-item.type-state_change  { border-left-color: var(--amber); }
+.expand-log-item.type-detection     { border-left-color: #9b7de8; }
+.expand-action-list { display: flex; flex-direction: column; gap: 2px; }
+.expand-action-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.expand-action-seq    { color: var(--text-lo); min-width: 24px; }
+.expand-action-name   { color: var(--cyan); min-width: 80px; }
+.expand-action-params { color: var(--text-mid); flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.expand-action-status { min-width: 70px; text-align: right; }
+.expand-loading {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-lo);
+  padding: 12px;
+  text-transform: uppercase;
+}
+
+/* ── BADGES ──────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 2px;
+}
+.badge-received, .badge-pending { color: var(--text-lo);  border-color: var(--border-hi); }
+.badge-executing { color: var(--cyan);  border-color: var(--cyan);  background: rgba(29,215,200,0.06); }
+.badge-done, .badge-success { color: var(--green); border-color: var(--green); background: var(--green-faint); }
+.badge-failed, .badge-error { color: var(--red);   border-color: var(--red);   background: var(--red-dim); }
+.badge-warn  { color: var(--amber); border-color: var(--amber); background: var(--amber-dim); }
+.badge-fatal { color: #ffd0d0; border-color: var(--red); background: rgba(232,69,69,0.2); }
+
+/* ── EMPTY STATE ─────────────────────────────────── */
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-lo);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* ── RECOMMENDATIONS ─────────────────────────────── */
+.rec-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-hi);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 14px;
+  align-items: start;
+  transition: background 0.12s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.rec-card:hover { background: var(--surface2); }
+.rec-card.level-FATAL { border-left-color: var(--red); }
+.rec-card.level-ERROR { border-left-color: var(--red); }
+.rec-card.level-WARN  { border-left-color: var(--amber); }
+.rec-meta { display: flex; flex-direction: column; gap: 7px; }
+.rec-body { display: flex; flex-direction: column; gap: 8px; }
+.rec-node { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-lo); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-lo); }
+.rec-cmd  { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-mid); }
+.rec-cmd span { color: var(--cyan); }
+.rec-error { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.rec-recommendation {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--green);
+  line-height: 1.5;
+  padding: 10px 14px;
+  background: var(--green-faint);
+  border-left: 2px solid var(--green-dim);
+  border-radius: 0 2px 2px 0;
+}
+.rec-recommendation::before { content: '▸ '; opacity: 0.6; }
+
+/* ── SCROLLBAR ───────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-lo); }
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media (max-width: 1000px) {
+  .dash-grid    { grid-template-columns: repeat(2, 1fr); }
+  .expand-inner { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .dash-grid { grid-template-columns: 1fr 1fr; }
+  nav .tab   { padding: 0 12px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<!-- BOOT -->
+<div id="boot-overlay">
+  <div class="boot-terminal" id="bootTerminal"></div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo" data-text="ROBOT//ADMIN">ROBOT<span class="logo-sep">//</span>ADMIN</div>
+  <div class="header-right">
+    <div class="ws-wrap">
+      <div class="ws-dot" id="wsDot"></div>
+      <span class="ws-label" id="wsLabel">DISCONNECTED</span>
+    </div>
+    <div class="header-divider"></div>
+    <div id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="tab active" data-tab="dashboard">DASHBOARD</div>
+  <div class="tab" data-tab="commands">COMMANDS</div>
+  <div class="tab" data-tab="errors">ERRORS</div>
+  <div class="tab" data-tab="recommendations">RECOMMEND</div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="tab-dashboard">
+  <div class="dash-grid">
+    <div class="stat-card" id="card-state">
+      <div class="stat-label">LAST STATUS</div>
+      <div class="stat-value" id="stat-state">—</div>
+      <div class="stat-sub"  id="stat-state-sub">awaiting telemetry</div>
+    </div>
+    <div class="stat-card" id="card-cmd">
+      <div class="stat-label">LAST COMMAND</div>
+      <div class="stat-value small" id="stat-cmd">—</div>
+      <div class="stat-sub" id="stat-cmd-sub">—</div>
+    </div>
+    <div class="stat-card" id="card-err">
+      <div class="stat-label">LAST ERROR</div>
+      <div class="stat-value small" id="stat-err">NONE</div>
+      <div class="stat-sub" id="stat-err-sub">system nominal</div>
+    </div>
+    <div class="stat-card" id="card-db">
+      <div class="stat-label">DATA LINK</div>
+      <div class="stat-value" id="stat-db">—</div>
+      <div class="stat-sub" id="stat-db-sub">—</div>
+    </div>
+    <div class="stat-card" id="card-detection">
+      <div class="stat-label">LAST DETECTION</div>
+      <div class="stat-value small" id="stat-det-obj">—</div>
+      <div class="stat-sub" id="stat-det-sub">no detection</div>
+    </div>
+  </div>
+
+  <div class="control-bar">
+    <button class="btn danger" id="btn-emergency-stop">비상정지</button>
+    <button class="btn" id="btn-admin-unlock">비상정지 해제</button>
+  </div>
+
+  <div class="sec-hdr">
+    <span class="sec-hdr-title">RECENT COMMANDS</span>
+    <span class="sec-hdr-count" id="tl-count">0 ENTRIES</span>
+  </div>
+  <div class="timeline" id="timeline">
+    <div class="empty-state">NO COMMAND DATA</div>
+  </div>
+</div>
+
+<!-- COMMANDS -->
+<div class="page" id="tab-commands">
+  <div class="toolbar">
+    <span class="count-chip" id="cmd-count">0 RECORDS</span>
+  </div>
+  <div class="filter-bar">
+    <input class="search-input" id="cmd-search" type="text" placeholder="Search raw text...">
+    <div class="pill-group" id="cmd-status-pills">
+      <button class="pill active" data-val="">ALL</button>
+      <button class="pill" data-val="received">RECEIVED</button>
+      <button class="pill" data-val="executing">EXECUTING</button>
+      <button class="pill" data-val="done">DONE</button>
+      <button class="pill" data-val="failed">FAILED</button>
+    </div>
+    <span class="filter-match-count" id="cmd-match"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>CMD ID</th>
+          <th>RAW TEXT</th>
+          <th>CURRENT ACTION</th>
+          <th>ACTIONS</th>
+          <th>ERRORS</th>
+          <th>STATUS</th>
+          <th>CREATED</th>
+          <th>FINISHED</th>
+        </tr>
+      </thead>
+      <tbody id="cmd-tbody"></tbody>
+    </table>
+    <div class="empty-state" id="cmd-empty">NO COMMANDS</div>
+  </div>
+</div>
+
+<!-- ERRORS -->
+<div class="page" id="tab-errors">
+  <div class="toolbar">
+    <span class="count-chip" id="err-count">0 RECORDS</span>
+  </div>
+  <div class="filter-bar">
+    <input class="search-input" id="err-search" type="text" placeholder="Node or message...">
+    <div class="pill-group" id="err-level-pills">
+      <button class="pill active" data-val="">ALL</button>
+      <button class="pill warn-pill"  data-val="WARN">WARN</button>
+      <button class="pill error-pill" data-val="ERROR">ERROR</button>
+      <button class="pill fatal-pill" data-val="FATAL">FATAL</button>
+    </div>
+    <span class="filter-match-count" id="err-match"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>LEVEL</th>
+          <th>NODE</th>
+          <th>MESSAGE</th>
+          <th>CMD ID</th>
+          <th>TIMESTAMP</th>
+        </tr>
+      </thead>
+      <tbody id="err-tbody"></tbody>
+    </table>
+    <div class="empty-state" id="err-empty">NO ERRORS</div>
+  </div>
+</div>
+
+<!-- RECOMMENDATIONS -->
+<div class="page" id="tab-recommendations">
+  <div class="toolbar">
+    <span class="count-chip" id="rec-count">0 RECORDS</span>
+  </div>
+  <div class="filter-bar">
+    <input class="search-input" id="rec-search" type="text" placeholder="Node or message...">
+    <div class="pill-group" id="rec-level-pills">
+      <button class="pill active" data-val="">ALL</button>
+      <button class="pill warn-pill"  data-val="WARN">WARN</button>
+      <button class="pill error-pill" data-val="ERROR">ERROR</button>
+      <button class="pill fatal-pill" data-val="FATAL">FATAL</button>
+    </div>
+    <span class="filter-match-count" id="rec-match"></span>
+  </div>
+  <div id="rec-list">
+    <div class="empty-state" id="rec-empty">NO DATA</div>
+  </div>
+</div>
+
+
+<script>
+'use strict';
+
+const API_BASE = `${location.protocol}//${location.hostname}:8000`;
+const WS_URL   = `ws://${location.hostname}:8000/ws/admin/logs`;
+
+/* ── BOOT ──────────────────────────────────────── */
+(function runBoot() {
+  const terminal = document.getElementById('bootTerminal');
+  const overlay  = document.getElementById('boot-overlay');
+  const lines = [
+    { text: 'BIOS v3.14 ... OK',                          delay: 0   },
+    { text: 'INITIALIZING ROBOT MANAGEMENT SYSTEM ...',   delay: 120 },
+    { text: 'LOADING KERNEL MODULES ................. OK', delay: 240 },
+    { text: 'MOUNTING DATABASE INTERFACE ............ OK', delay: 380 },
+    { text: 'STARTING WEBSOCKET DAEMON .............. OK', delay: 520 },
+    { text: 'CONNECTING TO ROBOT NODES .............',     delay: 660 },
+    { text: '  > /ros2/state_manager .............. LINK', delay: 760 },
+    { text: '  > /ros2/db_logger .................. LINK', delay: 840 },
+    { text: '  > /ros2/detection_node ............. LINK', delay: 920 },
+    { text: 'ALL SYSTEMS NOMINAL',                         delay: 1050, hi: true },
+    { text: 'ACCESS GRANTED — WELCOME, OPERATOR',          delay: 1180, hi: true },
+  ];
+  let done = 0;
+  lines.forEach(({ text, delay, hi }) => {
+    setTimeout(() => {
+      const line = document.createElement('div');
+      line.className = 'boot-line show';
+      if (hi) { line.style.color = 'var(--green)'; line.style.textShadow = 'var(--glow-md)'; }
+      line.textContent = '> ' + text;
+      terminal.appendChild(line);
+      if (++done === lines.length) setTimeout(() => overlay.classList.add('hidden'), 400);
+    }, delay);
+  });
+})();
+
+/* ── CLOCK ─────────────────────────────────────── */
+function tickClock() {
+  const el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toTimeString().slice(0, 8);
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+/* ── HELPERS ───────────────────────────────────── */
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = (val != null && val !== '') ? String(val) : '—';
+}
+function makeEl(tag, opts) {
+  const el = document.createElement(tag);
+  if (opts) {
+    if (opts.cls)   el.className = opts.cls;
+    if (opts.text != null) el.textContent = String(opts.text);
+    if (opts.style) el.style.cssText = opts.style;
+    if (opts.title) el.title = opts.title;
+  }
+  return el;
+}
+function setCard(id, cls) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'stat-card' + (cls ? ' ' + cls : '');
+}
+
+/* ── TABS ──────────────────────────────────────── */
+document.getElementById('mainNav').addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  const name = tab.dataset.tab;
+  if (name === 'commands')        loadCommands();
+  if (name === 'errors')          loadErrors();
+  if (name === 'recommendations') loadRecommendations();
+});
+
+function wireBtn(id, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', fn);
+}
+
+/* ── WEBSOCKET ─────────────────────────────────── */
+let ws = null, wsRetryTimer = null;
+
+function connectWs() {
+  ws = new WebSocket(WS_URL);
+  ws.addEventListener('open', () => { setWsUi('connected'); clearInterval(wsRetryTimer); wsRetryTimer = null; loadDashboard(); });
+  ws.addEventListener('message', e => { try { handleWsMessage(JSON.parse(e.data)); } catch(_) {} });
+  ws.addEventListener('close',   () => { setWsUi('disconnected'); if (!wsRetryTimer) wsRetryTimer = setInterval(connectWs, 3000); });
+  ws.addEventListener('error',   () => { setWsUi('error'); ws.close(); });
+}
+
+function setWsUi(state) {
+  const dot   = document.getElementById('wsDot');
+  const label = document.getElementById('wsLabel');
+  dot.className   = 'ws-dot'   + (state === 'connected' ? ' connected' : state === 'error' ? ' error' : '');
+  label.className = 'ws-label' + (state === 'connected' ? ' connected' : state === 'error' ? ' error' : '');
+  label.textContent = state.toUpperCase();
+}
+
+function handleWsMessage(msg) {
+  if (!msg || !msg.type) return;
+  if (msg.type === 'command_update') onCommandUpdate(msg);
+  if (msg.type === 'error_update')   onErrorUpdate(msg);
+  if (msg.type === 'data_update')    onDataUpdate(msg.scope);
+}
+
+function onDataUpdate(scope) {
+  const active = document.querySelector('.tab.active')?.dataset?.tab;
+  loadDashboard();
+  if (scope === 'command' || scope === 'status') {
+    if (active === 'commands') loadCommands();
+  }
+  if (scope === 'error') {
+    if (active === 'errors')          loadErrors();
+    if (active === 'recommendations') loadRecommendations();
+  }
+  if (scope === 'detection') {
+    loadLastDetection();
+  }
+}
+
+/* ── DASHBOARD ─────────────────────────────────── */
+async function loadDashboard() {
+  try {
+    const [cmds, errs] = await Promise.all([
+      fetchJson(`${API_BASE}/admin/commands?limit=20`),
+      fetchJson(`${API_BASE}/admin/errors?limit=1`),
+    ]);
+
+    renderTimeline(cmds);
+
+    /* State card — from latest command */
+    if (cmds.length) {
+      const c = cmds[0];
+      const stateEl = document.getElementById('stat-state');
+      stateEl.textContent = (c.status || '—').toUpperCase();
+      stateEl.className   = 'stat-value ' + statusColorClass(c.status);
+      setText('stat-state-sub', c.current_action ? 'action: ' + c.current_action : fmtTime(c.created_at));
+      const isErr = c.status === 'failed';
+      setCard('card-state', isErr ? 'err' : c.status === 'executing' ? 'ok' : '');
+    }
+
+    /* Command card */
+    if (cmds.length) {
+      const c = cmds[0];
+      setText('stat-cmd',     trimStr(c.raw_text, 28));
+      setText('stat-cmd-sub', c.action_count + ' actions / ' + (c.error_count || 0) + ' errors');
+      setCard('card-cmd', c.status === 'failed' ? 'err' : c.status === 'done' ? 'ok' : '');
+    }
+
+    /* Error card */
+    if (errs.length) {
+      const e = errs[0];
+      setText('stat-err',     trimStr(e.message, 24));
+      setText('stat-err-sub', e.node_name || '—');
+      setCard('card-err', 'err');
+    } else {
+      setText('stat-err',     'NONE');
+      setText('stat-err-sub', 'system nominal');
+      setCard('card-err', 'ok');
+    }
+
+    /* DB card */
+    setText('stat-db',     'ONLINE');
+    setText('stat-db-sub', cmds.length + ' commands loaded');
+    document.getElementById('stat-db').className = 'stat-value green';
+    setCard('card-db', 'ok');
+
+  } catch(_) {
+    setText('stat-db', 'OFFLINE');
+    document.getElementById('stat-db').className = 'stat-value red';
+    setCard('card-db', 'err');
+  }
+}
+
+function onCommandUpdate(msg) {
+  setText('stat-cmd', trimStr(msg.raw_text, 28));
+}
+function onErrorUpdate(msg) {
+  setText('stat-err', trimStr(msg.message, 24));
+  setText('stat-err-sub', msg.node_name || '—');
+  setCard('card-err', 'err');
+}
+
+/* Timeline — shows recent commands */
+function renderTimeline(cmds) {
+  const tl = document.getElementById('timeline');
+  tl.textContent = '';
+  setText('tl-count', cmds.length + ' ENTRIES');
+  if (!cmds.length) {
+    tl.appendChild(makeEl('div', { cls: 'empty-state', text: 'NO COMMAND DATA' }));
+    return;
+  }
+  cmds.forEach(c => tl.appendChild(buildTlRow(c)));
+}
+
+function buildTlRow(c) {
+  const row = makeEl('div', { cls: 'tl-row ' + (c.status || '') });
+  const t   = makeEl('span', { cls: 'tl-time',  text: fmtTime(c.created_at) });
+  const st  = makeEl('span', { cls: 'tl-state', text: (c.status || '—').toUpperCase() });
+  st.style.color = statusColorVar(c.status);
+  const d   = makeEl('span', { cls: 'tl-detail', text: trimStr(c.raw_text, 60) || '—' });
+  row.append(t, st, d);
+  return row;
+}
+
+/* ── DATA STORES ───────────────────────────────── */
+let _cmdData = [], _errData = [];
+
+function activePillVal(groupId) {
+  const active = document.querySelector(`#${groupId} .pill.active`);
+  return active ? active.dataset.val : '';
+}
+function wirePills(groupId, fn) {
+  document.getElementById(groupId).addEventListener('click', e => {
+    const pill = e.target.closest('.pill');
+    if (!pill) return;
+    document.querySelectorAll(`#${groupId} .pill`).forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    fn();
+  });
+}
+
+/* ── COMMANDS ──────────────────────────────────── */
+async function loadCommands() {
+  try {
+    _cmdData = await fetchJson(`${API_BASE}/admin/commands?limit=200`);
+    setText('cmd-count', _cmdData.length + ' RECORDS');
+  } catch(_) { _cmdData = []; }
+  renderCommands();
+}
+
+function renderCommands() {
+  const q      = (document.getElementById('cmd-search').value || '').toLowerCase();
+  const status = activePillVal('cmd-status-pills');
+  const rows   = _cmdData.filter(r => {
+    if (status && (r.status || '').toLowerCase() !== status) return false;
+    if (q && !(r.raw_text || '').toLowerCase().includes(q))  return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('cmd-tbody');
+  const empty = document.getElementById('cmd-empty');
+  if (tbody.querySelector('.expand-row')) return;
+  tbody.textContent = '';
+  empty.style.display = rows.length ? 'none' : 'block';
+  document.getElementById('cmd-match').textContent =
+    q || status ? rows.length + ' / ' + _cmdData.length + ' MATCH' : '';
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.dataset.cmdId = r.command_id;
+    tr.append(
+      tdMono(shortId(r.command_id), r.command_id),
+      tdText(r.raw_text, 200, r.raw_text),
+      tdText(r.current_action || '—', 140),
+      tdMono(r.action_count != null ? String(r.action_count) : '—'),
+      tdMono(r.error_count   != null ? String(r.error_count)  : '—'),
+      tdBadge(r.status),
+      tdMono(fmtTime(r.created_at)),
+      tdMono(r.finished_at ? fmtTime(r.finished_at) : '—')
+    );
+    tr.addEventListener('click', () => toggleCmdDetail(tr, r.command_id));
+    tbody.appendChild(tr);
+  });
+}
+
+/* Command row expand → MongoDB detail */
+async function toggleCmdDetail(tr, commandId) {
+  const nextTr = tr.nextElementSibling;
+  if (nextTr && nextTr.classList.contains('expand-row')) {
+    nextTr.remove();
+    return;
+  }
+
+  const expandTr = document.createElement('tr');
+  expandTr.className = 'expand-row';
+  const expandTd = document.createElement('td');
+  expandTd.colSpan = 8;
+
+  const inner = makeEl('div', { cls: 'expand-inner' });
+  const loading = makeEl('div', { cls: 'expand-loading', text: 'LOADING MONGODB DATA...' });
+  inner.appendChild(loading);
+  expandTd.appendChild(inner);
+  expandTr.appendChild(expandTd);
+  tr.after(expandTr);
+
+  try {
+    const doc = await fetchJson(`${API_BASE}/admin/commands/${commandId}`);
+    inner.textContent = '';
+
+    /* Action params section */
+    const actSection = makeEl('div', { cls: 'expand-section' });
+    actSection.appendChild(makeEl('div', { cls: 'expand-title', text: 'ACTION PARAMS [MONGODB]' }));
+    const actList = makeEl('div', { cls: 'expand-action-list' });
+    const params = doc.action_params || [];
+    if (params.length) {
+      params.forEach(p => {
+        const item = makeEl('div', { cls: 'expand-action-item' });
+        item.append(
+          makeEl('span', { cls: 'expand-action-seq',    text: String(p.seq) }),
+          makeEl('span', { cls: 'expand-action-name',   text: p.action || '—' }),
+          makeEl('span', { cls: 'expand-action-params', text: JSON.stringify(p.params || {}), title: JSON.stringify(p.params || {}) }),
+          makeBadgeEl(p.status, 'expand-action-status')
+        );
+        actList.appendChild(item);
+      });
+    } else {
+      actList.appendChild(makeEl('div', { cls: 'expand-loading', text: 'NO ACTION PARAMS' }));
+    }
+    actSection.appendChild(actList);
+
+    /* Execution logs section */
+    const logSection = makeEl('div', { cls: 'expand-section' });
+    logSection.appendChild(makeEl('div', { cls: 'expand-title', text: 'EXECUTION LOGS [MONGODB]' }));
+    const logList = makeEl('div', { cls: 'expand-log-list' });
+    const logs = doc.execution_logs || [];
+    if (logs.length) {
+      logs.forEach(log => {
+        const item = makeEl('div', { cls: 'expand-log-item type-' + (log.type || '') });
+        let text = '';
+        if (log.type === 'state_change')  text = `[STATE] ${log.state || ''} — action:${log.action || '—'} target:${log.target || '—'}`;
+        else if (log.type === 'action_start')  text = `[START] ${log.action || ''} → ${log.target || '—'}`;
+        else if (log.type === 'action_done')   text = `[DONE]  ${log.action || ''} → ${log.target || '—'}`;
+        else if (log.type === 'action_failed') text = `[FAIL]  ${log.action || ''} → ${log.target || '—'}`;
+        else if (log.type === 'detection')     text = `[DET]   ${log.object_name || '?'} conf:${log.confidence != null ? (log.confidence * 100).toFixed(0) + '%' : '?'} detected:${log.detected}`;
+        else text = `[${(log.type || '?').toUpperCase()}]`;
+        const ts = log.timestamp ? ' ' + fmtTime(log.timestamp) : '';
+        item.textContent = text + ts;
+        logList.appendChild(item);
+      });
+    } else {
+      logList.appendChild(makeEl('div', { cls: 'expand-loading', text: 'NO EXECUTION LOGS' }));
+    }
+    logSection.appendChild(logList);
+
+    inner.append(actSection, logSection);
+  } catch(_) {
+    inner.textContent = '';
+    inner.appendChild(makeEl('div', { cls: 'expand-loading', text: 'FAILED TO LOAD MONGODB DATA' }));
+  }
+}
+
+function makeBadgeEl(status, extraCls) {
+  const span = document.createElement('span');
+  const norm = (status || '').toLowerCase();
+  span.className = 'badge badge-' + (norm || 'pending') + (extraCls ? ' ' + extraCls : '');
+  span.textContent = status || '—';
+  return span;
+}
+
+/* ── ERRORS ────────────────────────────────────── */
+async function loadErrors() {
+  try {
+    _errData = await fetchJson(`${API_BASE}/admin/errors?limit=200`);
+    setText('err-count', _errData.length + ' RECORDS');
+  } catch(_) { _errData = []; }
+  renderErrors();
+}
+
+function renderErrors() {
+  const q     = (document.getElementById('err-search').value || '').toLowerCase();
+  const level = activePillVal('err-level-pills');
+  const rows  = _errData.filter(r => {
+    if (level && (r.level || '').toUpperCase() !== level) return false;
+    if (q && !(r.node_name || '').toLowerCase().includes(q) && !(r.message || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('err-tbody');
+  const empty = document.getElementById('err-empty');
+  tbody.textContent = '';
+  empty.style.display = rows.length ? 'none' : 'block';
+  document.getElementById('err-match').textContent =
+    q || level ? rows.length + ' / ' + _errData.length + ' MATCH' : '';
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.append(
+      tdBadge(r.level || 'ERROR', 'level'),
+      tdText(r.node_name, 120),
+      tdText(r.message, 300, r.message),
+      tdMono(shortId(r.command_id), r.command_id),
+      tdMono(fmtTime(r.created_at))
+    );
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── RECOMMENDATIONS ───────────────────────────── */
+let _recData = [];
+
+async function loadRecommendations() {
+  try {
+    _recData = await fetchJson(`${API_BASE}/admin/recommendations?limit=50`);
+    setText('rec-count', _recData.length + ' RECORDS');
+  } catch(_) { _recData = []; }
+  renderRecommendations();
+}
+
+function renderRecommendations() {
+  const q     = (document.getElementById('rec-search').value || '').toLowerCase();
+  const level = activePillVal('rec-level-pills');
+  const rows  = _recData.filter(r => {
+    if (level && (r.level || '').toUpperCase() !== level) return false;
+    if (q) {
+      if (!(r.node_name     || '').toLowerCase().includes(q) &&
+          !(r.error_message || '').toLowerCase().includes(q) &&
+          !(r.recommendation|| '').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  const list  = document.getElementById('rec-list');
+  const empty = document.getElementById('rec-empty');
+  list.textContent = '';
+  list.appendChild(empty);
+  empty.style.display = rows.length ? 'none' : 'block';
+  document.getElementById('rec-match').textContent =
+    q || level ? rows.length + ' / ' + _recData.length + ' MATCH' : '';
+
+  rows.forEach(r => {
+    const card = makeEl('div', { cls: `rec-card level-${r.level || 'WARN'}` });
+    const meta = makeEl('div', { cls: 'rec-meta' });
+    meta.append(
+      makeEl('span', { cls: 'badge badge-' + (r.level === 'FATAL' ? 'fatal' : r.level === 'ERROR' ? 'error' : 'warn'), text: r.level || '?' }),
+      makeEl('div', { cls: 'rec-node', text: r.node_name || '—', title: r.node_name }),
+      makeEl('div', { cls: 'rec-time', text: fmtTime(r.created_at) }),
+    );
+    const body = makeEl('div', { cls: 'rec-body' });
+    if (r.command_text || r.action_at_error) {
+      const cmd = makeEl('div', { cls: 'rec-cmd' });
+      if (r.command_text) {
+        cmd.append(makeEl('span', { text: '명령: ' }), makeEl('span', { text: r.command_text }));
+        if (r.action_at_error) {
+          cmd.append(makeEl('span', { text: '  /  액션: ' }));
+          const act = makeEl('span', { text: r.action_at_error });
+          act.style.color = 'var(--cyan)';
+          cmd.appendChild(act);
+        }
+      }
+      body.appendChild(cmd);
+    }
+    body.append(
+      makeEl('div', { cls: 'rec-error',          text: r.error_message  || '—', title: r.error_message }),
+      makeEl('div', { cls: 'rec-recommendation', text: r.recommendation || '—' }),
+    );
+    card.append(meta, body);
+    list.appendChild(card);
+  });
+}
+
+/* ── DETECTION (dead code — tab removed) ────────── */
+
+/* ── TD BUILDERS ───────────────────────────────── */
+function tdMono(val, title) {
+  const td = document.createElement('td');
+  td.style.fontFamily = "'JetBrains Mono', monospace";
+  td.style.fontSize   = '13px';
+  td.style.color      = 'var(--text-mid)';
+  td.textContent      = val != null ? String(val) : '—';
+  if (title) td.title = title;
+  return td;
+}
+function tdText(val, maxW, title) {
+  const td = document.createElement('td');
+  td.textContent = val != null && String(val) !== '' ? String(val) : '—';
+  if (maxW)  td.style.maxWidth = maxW + 'px';
+  if (title) td.title = title;
+  return td;
+}
+function tdBadge(val, mode) {
+  const td   = document.createElement('td');
+  const span = document.createElement('span');
+  const norm = (val || '').toLowerCase().trim();
+  let cls;
+  if (mode === 'level') {
+    if (norm === 'warn' || norm === 'warning') cls = 'badge-warn';
+    else if (norm === 'fatal')                  cls = 'badge-fatal';
+    else                                        cls = 'badge-error';
+  } else {
+    cls = 'badge-' + (norm || 'pending');
+  }
+  span.className   = 'badge ' + cls;
+  span.textContent = val || '—';
+  td.appendChild(span);
+  return td;
+}
+
+/* ── FETCH ─────────────────────────────────────── */
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+/* ── FORMATTERS ────────────────────────────────── */
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const s = String(iso).replace(' ', 'T');
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return String(iso).slice(0, 19);
+  const p = n => String(n).padStart(2, '0');
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+function shortId(id) {
+  if (id == null) return '—';
+  const s = String(id);
+  return s.length > 10 ? s.slice(0, 8) + '…' : s;
+}
+function trimStr(s, n) {
+  if (s == null) return '—';
+  const str = String(s);
+  return str.length > n ? str.slice(0, n) + '…' : str;
+}
+function fmtPct(v) { return v != null ? (Number(v) * 100).toFixed(1) + '%' : '—'; }
+function fmtNum(v) { return v != null ? Number(v).toFixed(2) : '—'; }
+
+function statusColorClass(s) {
+  if (!s) return '';
+  const u = s.toUpperCase();
+  if (u === 'EXECUTING')                                      return 'cyan';
+  if (u === 'DONE')                                           return 'green';
+  if (u === 'IDLE' || u === 'RECEIVED')                      return 'muted';
+  if (u === 'RECOVERING_RETRY' || u === 'RECOVERING_RESET')  return 'amber';
+  if (u === 'ERROR' || u === 'RECOVERING_FAIL' || u === 'ADMIN_INTERVENTION' || u === 'FAILED') return 'red';
+  return '';
+}
+function statusColorVar(s) {
+  if (!s) return '';
+  const u = s.toUpperCase();
+  if (u === 'EXECUTING')                                      return 'var(--cyan)';
+  if (u === 'DONE')                                           return 'var(--green)';
+  if (u === 'IDLE' || u === 'RECEIVED')                      return 'var(--text-lo)';
+  if (u === 'RECOVERING_RETRY' || u === 'RECOVERING_RESET')  return 'var(--amber)';
+  if (u === 'ERROR' || u === 'RECOVERING_FAIL' || u === 'ADMIN_INTERVENTION' || u === 'FAILED') return 'var(--red)';
+  return 'var(--text-lo)';
+}
+
+/* ── CONTROL BUTTONS ───────────────────────────── */
+document.getElementById('btn-emergency-stop').addEventListener('click', async () => {
+  if (!confirm('비상정지를 실행하시겠습니까?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/admin/emergency-stop`, { method: 'POST' });
+    const j   = await res.json();
+    if (!j.ok) alert('비상정지 실패: ' + (j.message || '응답 없음'));
+  } catch(e) { alert('비상정지 요청 실패'); }
+});
+
+document.getElementById('btn-admin-unlock').addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${API_BASE}/admin/admin-unlock`, { method: 'POST' });
+    const j   = await res.json();
+    if (!j.ok) alert('잠금 해제 실패: ' + (j.message || '응답 없음'));
+  } catch(e) { alert('잠금 해제 요청 실패'); }
+});
+
+/* ── WIRING ────────────────────────────────────── */
+
+document.getElementById('cmd-search').addEventListener('input', renderCommands);
+document.getElementById('err-search').addEventListener('input', renderErrors);
+document.getElementById('rec-search').addEventListener('input', renderRecommendations);
+
+wirePills('cmd-status-pills', renderCommands);
+wirePills('err-level-pills',  renderErrors);
+wirePills('rec-level-pills',  renderRecommendations);
+
+/* ── LAST DETECTION 카드 ────────────────────────── */
+async function loadLastDetection() {
+  try {
+    const rows = await fetchJson(`${API_BASE}/admin/detections?limit=1`);
+    if (!rows || rows.length === 0) return;
+    const d = rows[0];
+    const obj  = d.object_name || '—';
+    const conf = d.confidence != null ? (d.confidence * 100).toFixed(0) + '%' : '—';
+    const ok   = d.detected;
+    setText('stat-det-obj', obj.toUpperCase());
+    setText('stat-det-sub', `${ok ? '✓ detected' : '✗ not found'}  conf: ${conf}`);
+    setCard('card-detection', ok ? 'ok' : 'warn');
+  } catch(_) {}
+}
+
+/* ── INIT ──────────────────────────────────────── */
+connectWs();
+loadDashboard();
+loadLastDetection();
+
+/* 폴백 폴링 — WebSocket 이벤트 미수신 시에도 활성 탭 자동 갱신 */
+setInterval(() => {
+  const active = document.querySelector('.tab.active')?.dataset?.tab;
+  if (active === 'dashboard')       loadDashboard();
+  if (active === 'commands')        loadCommands();
+  if (active === 'errors')          loadErrors();
+  if (active === 'recommendations') loadRecommendations();
+}, 5000);
+</script>
+</body>
+</html>
